@@ -1,12 +1,13 @@
 class Nodo(object):
 
-    def __init__(self, nombre, costo=0):
+    def __init__(self, nombre, heuristica=0, profundidad=0):
         self.nombre = nombre
-        self.nodosAdyacentes = list()
-        self.costo = costo
+        self.nodosAdyacentes = dict()
+        self.heuristica = heuristica
+        self.profundidad = profundidad
 
-    def addNodoAdyacentes(self, nodo):
-        self.nodosAdyacentes.append(nodo)
+    def addNodoAdyacentes(self, nodo, peso=0):
+        self.nodosAdyacentes[nodo.nombre] = peso
 
     def __ne__(self, other):
         if self.nombre != other.nombre:
@@ -33,7 +34,11 @@ class Nodo(object):
             return False
 
     def __str__(self):
-        return self.nombre + ": " + str(self.costo)
+        # return self.nombre + ": " + str(self.costo)
+        return "(" + self.nombre + ") " + str(self.profundidad)
+
+    def __repr__(self):
+        return str(self.nombre)
 
 
 if __name__ == '__main__':

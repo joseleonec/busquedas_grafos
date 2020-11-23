@@ -1,201 +1,86 @@
 from pip._internal.cli.cmdoptions import abi
 
 from nodo import Nodo
-from collections import deque
 
 
 class Grafo():
 
     def __init__(self):
         self.contadorNodos = 0
-        self.nodos = list()
+        self.nodos = dict()
+        self.aristas = dict()
         # self.matriz = [[None] * 0 for i in range(0)]
 
-    def addNodo(self, nombre):
-        self.nodos.append(Nodo(nombre))
-        self.contadorNodos += 1
+    def graph_from_dict(self, dic):
+        for k, v in dic.items():
+            for ka, g in v.items():
+                self.addEdge(k, ka, g, False, 0, 0, 0)
 
-    def enlazar(self, nodoOrigen: str, nodoDestino: str):
+    def addNodo(self, nombre: str, heuristica=0):
+        if not nombre in self.nodos:
+            self.nodos[nombre] = Nodo(nombre, heuristica=heuristica)
+            self.contadorNodos += 1
 
-        for i in self.nodos:
-            if i.nombre == nodoOrigen:
-                n1 = i
-            elif i.nombre == nodoDestino:
-                n2 = i
-        if n1 is None or n2 is None:
-            print("Algun nodo no existe")
+    def addEdge(self, nodoOrigen: str, nodoDestino: str, peso1=0, bidireccional=False, peso2=0, h1=0, h2=0):
+
+        if nodoOrigen in self.nodos and nodoDestino in self.nodos:
+            n1 = self.nodos[nodoOrigen]
+            n2 = self.nodos[nodoDestino]
+            if h1 != 0:
+                n1.heuristica = h1
+            if h2 != 0:
+                n2.heuristica = h2
+            n2.profundidad = n1.profundidad + 1
+            n1.addNodoAdyacentes(n2, peso1)
+            self.aristas[(nodoOrigen, nodoDestino)] = peso1
+            if bidireccional:
+                n2.addNodoAdyacentes(n1, peso2)
+                self.aristas[(nodoDestino, nodoOrigen)] = peso2
         else:
-            n1.addNodoAdyacentes(n2)
+            n1 = None
+            n2 = None
+            if not nodoOrigen in self.nodos:
+                n1 = Nodo(nodoOrigen, h1)
+            if not nodoDestino in self.nodos:
+                n2 = Nodo(nodoDestino, h2)
+            if not n1:
+                n1 = self.nodos[nodoOrigen]
+            if not n2:
+                n2 = self.nodos[nodoDestino]
+            if n1 and n2:
+                if h1 != 0:
+                    n1.heuristica = h1
+                if h2 != 0:
+                    n2.heuristica = h2
+                self.nodos[nodoOrigen] = n1
+                self.nodos[nodoDestino] = n2
+                n1.addNodoAdyacentes(n2, peso1)
+                self.aristas[(nodoOrigen, nodoDestino)] = peso1
+                if bidireccional:
+                    n2.addNodoAdyacentes(n1, peso2)
+                    self.aristas[(nodoDestino, nodoOrigen)] = peso2
 
-    def busquedaAmplitud(self, nodoInicial: Nodo, nombreBuscado: str = ""):
+    def asignarProfundidad(self, root: str):
+        visitados = list()
+        self.nodos[root].profundidad = 0
 
-        cola = deque()  # cola para los vertices que se procesan
-        cola.append(nodoInicial)  # agregar el vertice a la cola
+        cola = list()
+        cola.append(self.nodos[root])
+        visitados.append(root)
+        while len(cola) > 0:
+            nodo = cola.pop(0)
+            p = nodo.profundidad
+            for k in nodo.nodosAdyacentes.keys():
+                if k not in visitados:
+                    na = self.nodos[k]
+                    na.profundidad = p + 1
+                    cola.append(na)
+                    visitados.append(k)
 
-        visitados = list()  # lista para los visitados
-        visitados.append(nodoInicial)  # agregar el vertice de inicio a los visitados
-
-        camino = list()  # lista para los nodos encontrados
-        encontrado = False
-
-        while len(cola) > 0 and not encontrado:
-            n = cola.popleft()
-            camino.append(n)
-            if n.nombre != nombreBuscado:
-                for na in n.nodosAdyacentes:
-                    if na not in visitados:
-                        cola.append(na)
-                        visitados.append(na)
-            else:
-                encontrado = True
-        if encontrado:
-            print("Camino (" + nombreBuscado + "): ", end="")
-            for i in camino:
-                print(" " + i.nombre, end=" ")
-            print()
-        else:
-            print("No existe el nodo ingresado.")
-
-    def busquedaAmplitudTodos(self):
-        for nodo in self.nodos:
-            self.busquedaAmplitud(self.nodos[0], nodo.nombre)
-
-    def busquedaProfundidad(self, nodoInicial: Nodo, nombreBuscado: str):
-
-        pila = list()  # pila para los vertices que se procesan
-        pila.append(nodoInicial)  # agregar el vertice a la pila
-
-        visitados = list()  # lista para los visitados
-        visitados.append(nodoInicial)  # agregar el vertice de inicio a los visitados
-
-        camino = list()  # lista para los nodos encontrados
-        encontrado = False
-
-        while len(pila) > 0 and not encontrado:
-            n = pila.pop()
-            camino.append(n)
-            if n.nombre != nombreBuscado:
-                for na in reversed(n.nodosAdyacentes):
-                    if na not in visitados:
-                        pila.append(na)
-                        visitados.append(na)
-            else:
-                encontrado = True
-        if encontrado:
-            print("Camino (" + nombreBuscado + "): ", end="")
-            for i in camino:
-                print(" -> " + i.nombre, end="")
-            print()
-        else:
-            print("No existe el nodo ingresado.")
-
-    def buscarProfundidadTodos(self):
-        for nodo in self.nodos:
-            self.busquedaProfundidad(self.nodos[0], nodo.nombre)
-
-    def busquedaProfundidadIterativa(self, nodoInicial: Nodo, nombreBuscado: str):
-
-        lp = 1  # Limite de exploración
-
-        pila = list()  # pila para los vertices que se procesan
-        pila.append(nodoInicial)  # agregar el vertice a la pila
-
-        visitados = list()  # lista para los visitados
-        visitados.append(nodoInicial)  # agregar el vertice de inicio a los visitados
-
-        camino = list()  # lista para los nodos encontrados
-        encontrado = False
-
-        lp = 1
-        contador_nivel = 0
-        while len(pila) > 0 and not encontrado:
-
-            n = pila.pop()
-            camino.append(n)
-            if n.nombre != nombreBuscado:
-                contador_nivel += 1
-                for na in reversed(n.nodosAdyacentes):
-                    if na not in visitados and contador_nivel <= lp:
-                        pila.append(na)
-                        visitados.append(na)
-            else:
-                encontrado = True
-        if encontrado:
-            print("Camino (" + nombreBuscado + "): ", end="")
-            for i in camino:
-                print(" -> " + i.nombre, end="")
-            print()
-        else:
-            print("No existe el nodo ingresado.")
-
-
-if __name__ == '__main__':
-    grafo = Grafo()
-    grafo.addNodo("n1")
-    grafo.addNodo("n2")
-    grafo.addNodo("n3")
-    grafo.addNodo("n4")
-    grafo.addNodo("n5")
-    grafo.addNodo("n6")
-
-    grafo.enlazar("n1", "n2")
-    grafo.enlazar("n1", "n3")
-
-    grafo.enlazar("n2", "n1")
-    grafo.enlazar("n2", "n4")
-    grafo.enlazar("n2", "n5")
-
-    grafo.enlazar("n3", "n1")
-    grafo.enlazar("n3", "n6")
-
-    grafo.enlazar("n5", "n2")
-    # grafo.busquedaAmplitud(grafo.nodos[0], "n6")
-    grafo.busquedaAmplitudTodos()
-    # grafo.busquedaProfundidad(grafo.nodos[0], "n6")
-    grafo.buscarProfundidadTodos()
-
-#     opc = ""
-#     while opc != "5":
-#         print("\tGRAFO")
-#         print("1. Agregar nodo")
-#         print("2. Relacionar nodos")
-#         print("3. Busqueda en Amplitud")
-#         print("4. Busqueda en Profundidad")
-#         print("5. Salir")
-#         opc = input("Ingrese una opción: ")
-#         cadena = ""
-#         if opc == "1":
-#             print("Ingrese el nombre del nodo: ")
-#             cadena = input()
-#             grafo.addNodo(cadena)
-#             print("Nodo agregado al grafo\n")
-#         elif opc == "2":
-#             print("\tLISTA DE NODOS DISPONIBLES")
-#             for n in grafo.nodos:
-#                 print("Nodo: " + n.nombre)
-#
-#             print("\nAgregar enlace desde nodo1 a nodo 2")
-#             print("Nodo 1: ")
-#             n1 = input()
-#             print("Nodo 2: ")
-#             n2 = input()
-#             grafo.enlazar(n1, n2)
-#             print("Nodos correctamente enlazados\n")
-#         elif opc == "3":
-#             print("Ingrese el nodo de busqueda: ")
-#             cadena = input()
-#             if cadena == "":
-#                 grafo.busquedaAmplitudTodos()
-#             else:
-#                 grafo.busquedaAmplitud(grafo.nodos[0], cadena)
-#         elif opc == "4":
-#             print("Ingrese el nodo de busqueda: ")
-#             cadena = input()
-#             if cadena == "":
-#                 grafo.buscarProfundidadTodos()
-#             else:
-#                 grafo.busquedaProfundidad(grafo.nodos[0], cadena)
-#         elif opc == "5":
-#             print("Saliendo...")
-#         else:
-#             print("Opcion erronea\n")
+    def __str__(self):
+        s = ""
+        for key in self.nodos:
+            n = self.nodos[key]
+            s += (str(n) + ": " if n else " ")
+            s += str(list(n.nodosAdyacentes.keys())) + "\n" if len(n.nodosAdyacentes) else "\n"
+        return s
