@@ -35,7 +35,8 @@ class Nodo(object):
 
     def __str__(self):
         # return self.nombre + ": " + str(self.costo)
-        return "(" + self.nombre + ") " + str(self.profundidad)
+        # return "(" + self.nombre + ") " + str(self.profundidad)
+        return "(" + self.nombre + ") "
 
     def __repr__(self):
         return str(self.nombre)

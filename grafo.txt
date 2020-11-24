@@ -1,5 +1,5 @@
 #A B G(B) G(A) H(A) H(B)
-nodos
+nodo
 A 9
 B 4
 C 2

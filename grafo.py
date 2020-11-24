@@ -9,6 +9,7 @@ class Grafo():
         self.contadorNodos = 0
         self.nodos = dict()
         self.aristas = dict()
+        self.profundidad = 0
         # self.matriz = [[None] * 0 for i in range(0)]
 
     def graph_from_dict(self, dic):
@@ -74,6 +75,8 @@ class Grafo():
                 if k not in visitados:
                     na = self.nodos[k]
                     na.profundidad = p + 1
+                    if na.profundidad > self.profundidad:
+                        self.profundidad = na.profundidad
                     cola.append(na)
                     visitados.append(k)
 
